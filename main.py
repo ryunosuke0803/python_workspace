@@ -4,21 +4,22 @@ import MySQLdb
 
 
 # 接続する
-conn = MySQLdb.connect(
-user='root',
-passwd='',
-host='localhost',
-db='test_db',
-charset='utf8'
-) 
-cursor = conn.cursor()
-cursor.execute("INSERT INTO test (id,name) VALUES(1,'kasi')")
-cursor.execute("SELECT * FROM test")
-for row in cursor:
-    print(row)
-conn.commit()
-# 接続を閉じる
-conn.close
+def database():
+    conn = MySQLdb.connect(
+    user='root',
+    passwd='',
+    host='localhost',
+    db='test_db',
+    charset='utf8'
+    ) 
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO test (id,name) VALUES(1,'kasi')")
+    cursor.execute("SELECT * FROM test")
+    for row in cursor:
+        print(row)
+    conn.commit()
+    # 接続を閉じる
+    conn.close
 
 with open('index.html', 'r',encoding="utf-8") as f:
     index_file = f.read()
@@ -39,6 +40,7 @@ class OriginalHTTPRequestHandler(SimpleHTTPRequestHandler):
             content = 'ブログの内容'
         )
         self.wfile.write(html.encode('UTF-8'))
+        database()
         return None
 
 
@@ -75,4 +77,3 @@ def run(server_class=HTTPServer, handler_class=OriginalHTTPRequestHandler):
 
 if __name__ == '__main__':
     run()
-    database()
