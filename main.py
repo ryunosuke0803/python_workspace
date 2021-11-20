@@ -1,10 +1,8 @@
-from cgi import FieldStorage
+from cgi import FieldStorage, test
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 import MySQLdb
 
-
-# 接続する
-def database():
+def database(postdata):
     conn = MySQLdb.connect(
     user='root',
     passwd='',
@@ -13,8 +11,9 @@ def database():
     charset='utf8'
     ) 
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO test (id,name) VALUES(1,'kasi')")
-    cursor.execute("SELECT * FROM test")
+    sql=('INSERT INTO test (title, content) values (%s,%s)')
+    cursor.execute(sql,postdata)
+    cursor.execute('select * from test;')
     for row in cursor:
         print(row)
     conn.commit()
@@ -26,7 +25,6 @@ with open('index.html', 'r',encoding="utf-8") as f:
 
 with open('result.html', 'r',encoding="utf-8") as f:
     result_file = f.read()
-
 
 class OriginalHTTPRequestHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
@@ -40,7 +38,6 @@ class OriginalHTTPRequestHandler(SimpleHTTPRequestHandler):
             content = 'ブログの内容'
         )
         self.wfile.write(html.encode('UTF-8'))
-        database()
         return None
 
 
@@ -64,9 +61,11 @@ class OriginalHTTPRequestHandler(SimpleHTTPRequestHandler):
             content_message = '投稿内容：',
             title = title_form, 
             content = content_form,
-            link = '/result.html'
+            link = '/index.html',
         )
+        postdata = [title_form,content_form]
         self.wfile.write(html.encode('utf-8'))
+        database(postdata)
         return None
 
 def run(server_class=HTTPServer, handler_class=OriginalHTTPRequestHandler):
