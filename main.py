@@ -2,7 +2,22 @@ from cgi import FieldStorage, test
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 import MySQLdb
 
-def database(postdata):
+def database_select():
+    conn = MySQLdb.connect(
+    user='root',
+    passwd='',
+    host='localhost',
+    db='test_db',
+    charset='utf8'
+    ) 
+    cursor = conn.cursor()
+    cursor.execute('select * from test;')
+    conn.commit()
+    # 接続を閉じる
+    conn.close
+    return cursor
+
+def database_insert(postdata):
     conn = MySQLdb.connect(
     user='root',
     passwd='',
@@ -13,11 +28,7 @@ def database(postdata):
     cursor = conn.cursor()
     sql=('INSERT INTO test (title, content) values (%s,%s)')
     cursor.execute(sql,postdata)
-    cursor.execute('select * from test;')
-    for row in cursor:
-        print(row)
     conn.commit()
-    # 接続を閉じる
     conn.close
 
 with open('index.html', 'r',encoding="utf-8") as f:
@@ -26,20 +37,38 @@ with open('index.html', 'r',encoding="utf-8") as f:
 with open('result.html', 'r',encoding="utf-8") as f:
     result_file = f.read()
 
+with open('list.html', 'r',encoding="utf-8") as f:
+    list_file = f.read()
+
 class OriginalHTTPRequestHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
+        if self.path =="/list.html":
+            self.send_response(200)
+            self.end_headers()
 
-        self.send_response(200)
-        self.end_headers()
+            for row in database_select():
+                id = row[0]
+                title_list = row[1]
+                content_list = row[2]
+                
+            html = list_file.format(
+                id = id,
+                title_list = title_list,
+                content_list = content_list
+            )
+            self.wfile.write(html.encode('UTF-8'))
 
-        html = index_file.format(
-            header = '投稿画面',
-            title = 'ブログのタイトル',
-            content = 'ブログの内容'
-        )
-        self.wfile.write(html.encode('UTF-8'))
+        else:
+            self.send_response(200)
+            self.end_headers()
+            html = index_file.format(
+                header = '投稿画面',
+                title = 'ブログのタイトル',
+                content = 'ブログの内容',
+                list_link ='/list.html'
+            )
+            self.wfile.write(html.encode('UTF-8'))
         return None
-
 
     def do_POST(self):
 
@@ -65,7 +94,7 @@ class OriginalHTTPRequestHandler(SimpleHTTPRequestHandler):
         )
         postdata = [title_form,content_form]
         self.wfile.write(html.encode('utf-8'))
-        database(postdata)
+        database_insert(postdata)
         return None
 
 def run(server_class=HTTPServer, handler_class=OriginalHTTPRequestHandler):
